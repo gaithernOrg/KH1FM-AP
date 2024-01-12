@@ -61,7 +61,7 @@ class KH1Context(CommonContext):
                     os.remove(root+"/"+file)
 
         self.message_handler = KH1_MessageHandler(2, self.game_communication_path)
-        #
+        # debug...
         # self.message_handler.receive_message(KH1_message_type.test, [
         #     "I'm a test message",
         #     "with multiple values",
@@ -100,6 +100,7 @@ class KH1Context(CommonContext):
             for file in files:
                 if file.find("obtain") <= -1:
                     os.remove(root+"/"+file)
+        pass;
 
     def on_package(self, cmd: str, args: dict):
         if cmd in {"Connected"}:
@@ -109,7 +110,9 @@ class KH1Context(CommonContext):
                 filename = f"send{ss}"
                 with open(os.path.join(self.game_communication_path, filename), 'w') as f:
                     f.close()
-            self.message_handler.receive_message(KH1_message_type.test, [
+
+            #example usage of the message handler
+            self.send_message(KH1_message_type.connected, [
                 "Connected to the Multiworld!"
             ]);
 
@@ -170,6 +173,7 @@ class KH1Context(CommonContext):
                     + str(itemCategory) + "\n"
                     + str(locationID))
                     f.close()
+        pass;
 
     def run_gui(self):
         """Import kivy UI system and start running it as self.ui_task."""
@@ -183,6 +187,11 @@ class KH1Context(CommonContext):
 
         self.ui = KH1Manager(self)
         self.ui_task = asyncio.create_task(self.ui.async_run(), name="UI")
+        pass;
+
+    def send_message(self, type: KH1_message_type, values: list):
+        self.message_handler.append_message(type, values)
+        pass;
 
 
 async def game_watcher(ctx: KH1Context):
