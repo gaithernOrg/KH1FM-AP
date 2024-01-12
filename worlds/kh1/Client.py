@@ -6,16 +6,18 @@ import asyncio
 import shutil
 import logging
 import re
-import time
-from calendar import timegm
+from .MessageHandler import KH1_message_type, KH1_UniversalMessage, KH1_MessageHandler
 
 import ModuleUpdate
 ModuleUpdate.update()
 
 import Utils
-death_link = False
+
+check_num = 0
 
 logger = logging.getLogger("Client")
+
+
 
 if __name__ == "__main__":
     Utils.init_logging("KH1Client", exception_logger="Client")
@@ -30,15 +32,10 @@ def check_stdin() -> None:
         print("WARNING: Console input is not routed reliably on Windows, use the GUI instead.")
 
 class KH1ClientCommandProcessor(ClientCommandProcessor):
-    def _cmd_deathlink(self):
-        """Toggles Deathlink"""
-        global death_link
-        if death_link:
-            death_link = False
-            self.output(f"Death Link turned off")
-        else:
-            death_link = True
-            self.output(f"Death Link turned on")
+    pass
+    #def _cmd_test(self):
+    #    """Test"""
+    #    self.output(f"Test")
 
 class KH1Context(CommonContext):
     command_processor: int = KH1ClientCommandProcessor
@@ -50,6 +47,7 @@ class KH1Context(CommonContext):
         self.send_index: int = 0
         self.syncing = False
         self.awaiting_bridge = False
+
         # self.game_communication_path: files go in this path to pass data between us and the actual game
         if "localappdata" in os.environ:
             self.game_communication_path = os.path.expandvars(r"%localappdata%/KH1FM")
@@ -96,6 +94,7 @@ class KH1Context(CommonContext):
             return []
 
     async def shutdown(self):
+        self.message_handler.stop_sending();
         await super(KH1Context, self).shutdown()
         for root, dirs, files in os.walk(self.game_communication_path):
             for file in files:
@@ -164,42 +163,17 @@ class KH1Context(CommonContext):
                 itemCategory = networkItem.flags
                 recieverName = self.player_names[recieverID]
                 filename = "sent"
+                sanitizedItemName = re.sub('[^A-Za-z0-9 ]+', '',str(itemName))[:15];
+                sanitizedRecieverName = re.sub('[^A-Za-z0-9 ]+', '',str(recieverName))[:6]
+
                 with open(os.path.join(self.game_communication_path, filename), 'w') as f:
                     f.write(
-                      re.sub('[^A-Za-z0-9 ]+', '',str(itemName))[:15] + "\n"
-                    + re.sub('[^A-Za-z0-9 ]+', '',str(recieverName))[:6] + "\n"
+                      sanitizedItemName + "\n"
+                    + sanitizedRecieverName + "\n"
                     + str(itemCategory) + "\n"
                     + str(locationID))
                     f.close()
         pass;
-
-    def on_deathlink(self, data: typing.Dict[str, typing.Any]):
-        with open(os.path.join(self.game_communication_path, 'dlreceive'), 'w') as f:
-            f.write(str(int(data["time"])))
-            f.close()
-
-#f.write(self.item_names[NetworkItem(*item).item] + "\n" + self.location_names[NetworkItem(*item).location] + "\n" + self.player_names[NetworkItem(*item).player])
-
-
-
-        #last resort we can probably do better
-        #input: Krujo sent Magic Upgrade to Tim ((TT3) LocationName)
-        # if cmd in {"PrintJSON"}:
-        #     data = args["data"]
-        #     if data[0]:
-        #         msg = str(data[0]["text"]);
-        #         #player send a location
-        #         # if msg.startswith(self.auth + " sent "): #debug
-        #         with open(os.path.join(self.game_communication_path, "sent"), 'w') as f:
-        #             msg = msg.replace(self.auth + " sent ", "")
-        #             #Magic Upgrade to Tim ((TT3) LocationName)
-        #             splitTo = msg.split(" to ")
-        #             targetPlayer = splitTo[1].split(" ")[0]
-        #             f.close()
-
-
-
-
 
     def run_gui(self):
         """Import kivy UI system and start running it as self.ui_task."""
@@ -223,11 +197,6 @@ class KH1Context(CommonContext):
 async def game_watcher(ctx: KH1Context):
     from worlds.kh1.Locations import lookup_id_to_name
     while not ctx.exit_event.is_set():
-        global death_link
-        if death_link and "DeathLink" not in ctx.tags:
-            await ctx.update_death_link(death_link)
-        if not death_link and "DeathLink" in ctx.tags:
-            await ctx.update_death_link(death_link)
         if ctx.syncing == True:
             sync_msg = [{'cmd': 'Sync'}]
             if ctx.locations_checked:
@@ -244,11 +213,6 @@ async def game_watcher(ctx: KH1Context):
                         sending = sending+[(int(st))]
                 if file.find("victory") > -1:
                     victory = True
-                if file.find("dlsend") > -1 and "DeathLink" in ctx.tags:
-                    st = file.split("dlsend", -1)[1]
-                    if st != "nil":
-                        if timegm(time.strptime(st, '%Y%m%d%H%M%S')) > ctx.last_death_link and int(time.time()) % int(timegm(time.strptime(st, '%Y%m%d%H%M%S'))) < 10:
-                            await ctx.send_death(death_text = "Sora was defeated!")
         ctx.locations_checked = sending
         message = [{"cmd": 'LocationChecks', "locations": sending}]
         await ctx.send_msgs(message)
