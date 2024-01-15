@@ -261,7 +261,7 @@ def create_regions(multiworld: MultiWorld, player: int, goal: str, atlantica: bo
     regions["End of the World"].locations.append("End of the World Final Rest Chest"),
     regions["Monstro"].locations.append("Monstro Chamber 6 White Trinity Chest"),
    #regions["Awakening"].locations.append("Awakening Chest"), missable
-   
+
    #regions["End of the World"].locations.append("Chronicles Sora's Story")
     if goal in ["final_rest", "unknown"]: #Not possible if HB is complete, could interefere with other win cons if 4 emblems is not go-mode
         regions["Wonderland"].locations.append("Chronicles Wonderland")
@@ -274,7 +274,7 @@ def create_regions(multiworld: MultiWorld, player: int, goal: str, atlantica: bo
         regions["Atlantica"].locations.append("Chronicles Atlantica")
     regions["Halloween Town"].locations.append("Chronicles Halloween Town")
    #regions["Neverland"].locations.append("Chronicles Neverland")
-    
+
     regions["Agrabah"].locations.append("Ansem's Secret Report 1")
     regions["Hollow Bastion"].locations.append("Ansem's Secret Report 2")
     if atlantica or goal == "atlantica":
@@ -291,11 +291,11 @@ def create_regions(multiworld: MultiWorld, player: int, goal: str, atlantica: bo
         regions["Olympus Coliseum"].locations.append("Ansem's Secret Report 12")
     if goal == "unknown":
         regions["Hollow Bastion"].locations.append("Ansem's Secret Report 13")
-   
+
     for i in range(levels):
         regions["Levels"].locations.append("Level " + str(i+1).rjust(3,'0'))
 
-   
+
     regions["Olympus Coliseum"].locations.append("Complete Phil Cup")
     regions["Olympus Coliseum"].locations.append("Complete Pegasus Cup")
     regions["Olympus Coliseum"].locations.append("Complete Hercules Cup")
